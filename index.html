@@ -21,6 +21,25 @@
     header h1 { margin: 0; color: var(--primary); font-size: 1.6rem; }
     header p { margin: 5px 0 0; color: #64748b; font-size: 0.95rem; }
 
+    .backup-bar {
+      display: flex; gap: 10px; align-items: center; justify-content: flex-end;
+      background: #f8fafc; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px;
+      border: 1px dashed #94a3b8; flex-wrap: wrap;
+    }
+    .backup-bar span { font-size: 0.9rem; font-weight: bold; color: #334155; margin-right: auto; }
+    .btn-backup {
+      background: #059669; color: white; border: none; padding: 7px 14px;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-backup:hover { opacity: 0.9; }
+    .btn-restore {
+      background: #d97706; color: white; border: none; padding: 7px 14px;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-restore:hover { opacity: 0.9; }
+
     .school-info {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;
       background: #eff6ff; padding: 14px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bfdbfe;
@@ -69,7 +88,7 @@
 
     @media print {
       body { background: white; padding: 0; }
-      .tabs, .btn-submit, .btn-print, .btn-del, .no-print, .btn-save-norms { display: none !important; }
+      .tabs, .btn-submit, .btn-print, .btn-del, .no-print, .btn-save-norms, .backup-bar { display: none !important; }
       .container { box-shadow: none; padding: 0; max-width: 100%; }
       .tab-content { display: block !important; page-break-after: always; }
     }
@@ -82,6 +101,14 @@
     <h1>प्रधानमंत्री पोषण शक्ती निर्माण योजना (MDM)</h1>
     <p>दैनिक हिशोब, मासिक व वार्षिक उपयोगिता साठा नोंदणी प्रणाली</p>
   </header>
+
+  <!-- डेटा बॅकअप व रिस्टोअर बार (Data Safety Bar) -->
+  <div class="backup-bar no-print">
+    <span>🔒 डेटा सुरक्षा व सुरक्षित साठा (Cloud/Offline Backup):</span>
+    <button class="btn-backup" onclick="exportBackupData()">📥 डेटा बॅकअप डाऊनलोड करा</button>
+    <button class="btn-restore" onclick="triggerRestore()">📤 बॅकअप रिस्टोअर करा</button>
+    <input type="file" id="restoreFileInput" accept=".json" style="display:none;" onchange="importBackupData(event)">
+  </div>
 
   <!-- शाळा, केंद्र, तालुका, जिल्हा व महिना -->
   <div class="school-info no-print">
@@ -322,7 +349,7 @@
     </div>
   </div>
 
-  <!-- TAB 6: वार्षिक उपयोगिता १ ते ५ (नवीन) -->
+  <!-- TAB 6: वार्षिक उपयोगिता १ ते ५ -->
   <div id="annual15-tab" class="tab-content">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="color:#3730a3;">📅 वार्षिक उपयोगिता प्रमाणपत्र (इ. १ ते ५) - संपूर्ण वर्ष एकत्रित बेरीज</h3>
@@ -350,7 +377,7 @@
     </div>
   </div>
 
-  <!-- TAB 7: वार्षिक उपयोगिता ६ ते ८ (नवीन) -->
+  <!-- TAB 7: वार्षिक उपयोगिता ६ ते ८ -->
   <div id="annual68-tab" class="tab-content">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="color:#3730a3;">📅 वार्षिक उपयोगिता प्रमाणपत्र (इ. ६ ते ८) - संपूर्ण वर्ष एकत्रित बेरीज</h3>
@@ -506,6 +533,74 @@
   let currentMonth = document.getElementById('schMonth').value;
   let allRecords = JSON.parse(localStorage.getItem('mdm_all_records')) || {};
   let allStock = JSON.parse(localStorage.getItem('mdm_all_stock')) || {};
+
+  /* === डेटा बॅकअप (Export) व रिस्टोअर (Import) कार्यप्रणाली === */
+  function exportBackupData() {
+    const backupData = {
+      version: '2.0',
+      exportDate: new Date().toISOString(),
+      schoolInfo: JSON.parse(localStorage.getItem('mdm_school_info')) || {},
+      allRecords: allRecords,
+      allStock: allStock,
+      menuRecipes: menuRecipes
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    const schName = (backupData.schoolInfo.name || 'MDM').replace(/\s+/g, '_');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `MDM_Backup_${schName}_${today}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    alert('✅ संपूर्ण डेटा बॅकअप यशस्वीरीत्या डाऊनलोड झाला!\nसदर फाईल तुमच्या Google Drive किंवा WhatsApp वर सुरक्षित सेव्ह करा.');
+  }
+
+  function triggerRestore() {
+    document.getElementById('restoreFileInput').click();
+  }
+
+  function importBackupData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        if (!importedData.allRecords && !importedData.allStock) {
+          alert('❌ चुकीची बॅकअप फाईल! कृपया योग्य .json फाईल निवडा.');
+          return;
+        }
+
+        if (confirm('⚠️ लक्ष द्या: बॅकअप रिस्टोअर केल्याने सध्याच्या नोंदी बदलल्या जातील. खात्री आहे का?')) {
+          if (importedData.schoolInfo) localStorage.setItem('mdm_school_info', JSON.stringify(importedData.schoolInfo));
+          if (importedData.allRecords) {
+            allRecords = importedData.allRecords;
+            localStorage.setItem('mdm_all_records', JSON.stringify(allRecords));
+          }
+          if (importedData.allStock) {
+            allStock = importedData.allStock;
+            localStorage.setItem('mdm_all_stock', JSON.stringify(allStock));
+          }
+          if (importedData.menuRecipes) {
+            menuRecipes = importedData.menuRecipes;
+            localStorage.setItem('mdm_menu_recipes_v2', JSON.stringify(menuRecipes));
+          }
+
+          loadSchoolHeader();
+          onMonthChange();
+          calcPreview();
+          alert('🎉 सर्व डेटा यशस्वीरीत्या रिस्टोअर झाला!');
+        }
+      } catch (err) {
+        alert('❌ फाईल वाचताना त्रुटी आली. कृपया वैध फाईल निवडा.');
+      }
+      event.target.value = ''; // रिसेट
+    };
+    reader.readAsText(file);
+  }
 
   function loadSchoolHeader() {
     const info = JSON.parse(localStorage.getItem('mdm_school_info')) || null;
@@ -778,17 +873,14 @@
     renderUtilityStock(group);
   }
 
-  // वार्षिक उपयोगिता (Annual Stock Calculation) - सर्व १२ महिन्यांची एकत्रित बेरीज
   function renderAnnualStock(group) {
     const is15 = (group === '1-5');
     const body = document.getElementById(is15 ? 'annual15Body' : 'annual68Body');
     body.innerHTML = '';
     const labelGroup = is15 ? 'इ १ ते ५' : 'इ ६ ते ८';
 
-    // १ एप्रिल ची आरंभिक शिल्लक
     const aprilStock = allStock['04_एप्रिल'] || {};
 
-    // १२ महिन्यांतील एकूण आवक, एकूण लोकसहभाग आणि एकूण खर्ची
     let yearlyRec = {};
     let yearlyLok = {};
     let yearlyConsumed = {};
@@ -812,7 +904,7 @@
 
     STOCK_ITEMS.forEach((it, idx) => {
       const prefix = `${group}_${it}`;
-      const startBal = Number(aprilStock[`prev_${prefix}`] || 0); // वर्षाची सुरुवातीची शिल्लक
+      const startBal = Number(aprilStock[`prev_${prefix}`] || 0);
       const totRec = yearlyRec[it];
       const totLok = yearlyLok[it];
       const totAvail = startBal + totRec + totLok;
