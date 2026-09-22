@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>शालेय पोषण आहार (MDM) दैनिक, मासिक व वार्षिक उपयोगिता प्रणाली</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #0284c7;
+      --accent: #10b981;
+      --light: #f8fafc;
+      --dark: #1e293b;
+      --border: #cbd5e1;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { margin: 0; padding: 12px; background-color: #f1f5f9; color: var(--dark); }
+    .container { max-width: 1450px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    
+    header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px; }
+    header h1 { margin: 0; color: var(--primary); font-size: 1.6rem; }
+    header p { margin: 5px 0 0; color: #64748b; font-size: 0.95rem; }
+
+    .school-info {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;
+      background: #eff6ff; padding: 14px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bfdbfe;
+    }
+    .school-info label { font-size: 0.85rem; font-weight: bold; color: #1e40af; }
+    .school-info input, .school-info select { width: 100%; padding: 7px; border: 1px solid var(--border); border-radius: 4px; font-weight: bold; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding-bottom: 2px; }
+    .tab-btn {
+      padding: 9px 12px; border: none; background: #e2e8f0; border-radius: 8px 8px 0 0;
+      cursor: pointer; font-weight: bold; color: #475569; font-size: 0.82rem; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+    .form-group input, .form-group select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+
+    .btn-submit {
+      background: var(--accent); color: white; border: none; padding: 10px 24px;
+      font-size: 1rem; border-radius: 6px; cursor: pointer; font-weight: bold;
+    }
+    .btn-submit:hover { opacity: 0.9; }
+
+    .card-calc { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-top: 15px; }
+    .card-calc h3 { margin-top: 0; color: #166534; font-size: 1.1rem; }
+
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; text-align: center; }
+    th, td { border: 1px solid var(--border); padding: 6px 4px; }
+    th { background: #f1f5f9; color: var(--primary); font-weight: 600; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    
+    .btn-del { background: #ef4444; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
+    .btn-print { background: var(--secondary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
+    .btn-save-norms { background: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+    .report-meta {
+      display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;
+      font-size: 0.88rem; font-weight: 600; color: #334155;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .tabs, .btn-submit, .btn-print, .btn-del, .no-print, .btn-save-norms { display: none !important; }
+      .container { box-shadow: none; padding: 0; max-width: 100%; }
+      .tab-content { display: block !important; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>प्रधानमंत्री पोषण शक्ती निर्माण योजना (MDM)</h1>
+    <p>दैनिक हिशोब, मासिक व वार्षिक उपयोगिता साठा नोंदणी प्रणाली</p>
+  </header>
+
+  <!-- शाळा, केंद्र, तालुका, जिल्हा व महिना -->
+  <div class="school-info no-print">
+    <div>
+      <label>शाळेचे नाव:</label>
+      <input type="text" id="schName" value="जिल्हा परिषद शाळा पांढरेवाडी" onchange="saveSchoolHeader()">
+    </div>
+    <div>
+      <label>UDISE कोड:</label>
+      <input type="text" id="schUdise" value="27310208201" onchange="saveSchoolHeader()">
+    </div>
+    <div>
+      <label>केंद्र:</label>
+      <input type="text" id="schCenter" value="म्हसवड" onchange="saveSchoolHeader()">
+    </div>
+    <div>
+      <label>तालुका:</label>
+      <input type="text" id="schTaluka" value="माण" onchange="saveSchoolHeader()">
+    </div>
+    <div>
+      <label>जिल्हा:</label>
+      <input type="text" id="schDist" value="सातारा" onchange="saveSchoolHeader()">
+    </div>
+    <div>
+      <label>महिना निवडा (Dropdown):</label>
+      <select id="schMonth" onchange="onMonthChange()">
+        <option value="04_एप्रिल">एप्रिल (April)</option>
+        <option value="05_मे">मे (May)</option>
+        <option value="06_जून">जून (June)</option>
+        <option value="07_जुलै">जुलै (July)</option>
+        <option value="08_ऑगस्ट">ऑगस्ट (August)</option>
+        <option value="09_सप्टेंबर" selected>सप्टेंबर (September)</option>
+        <option value="10_ऑक्टोबर">ऑक्टोबर (October)</option>
+        <option value="11_नोव्हेंबर">नोव्हेंबर (November)</option>
+        <option value="12_डिसेंबर">डिसेंबर (December)</option>
+        <option value="01_जानेवारी">जानेवारी (January)</option>
+        <option value="02_फेब्रुवारी">फेब्रुवारी (February)</option>
+        <option value="03_मार्च">मार्च (March)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs no-print">
+    <button class="tab-btn active" onclick="switchTab('daily-tab', event)">📝 दैनिक नोंद</button>
+    <button class="tab-btn" onclick="switchTab('reg15-tab', event)">📊 रजिस्टर (१ ते ५)</button>
+    <button class="tab-btn" onclick="switchTab('reg68-tab', event)">📊 रजिस्टर (६ ते ८)</button>
+    <button class="tab-btn" onclick="switchTab('stock15-tab', event)">📦 मासिक उपयोगिता (१ ते ५)</button>
+    <button class="tab-btn" onclick="switchTab('stock68-tab', event)">📦 मासिक उपयोगिता (६ ते ८)</button>
+    <button class="tab-btn" onclick="switchTab('annual15-tab', event)" style="background:#e0e7ff; color:#3730a3;">📅 वार्षिक उपयोगिता (१ ते ५)</button>
+    <button class="tab-btn" onclick="switchTab('annual68-tab', event)" style="background:#e0e7ff; color:#3730a3;">📅 वार्षिक उपयोगिता (६ ते ८)</button>
+    <button class="tab-btn" onclick="switchTab('taste-tab', event)">🍲 चव नोंदवही</button>
+    <button class="tab-btn" onclick="switchTab('settings-tab', event)" style="background:#fef3c7; color:#92400e;">⚙️ मेनू रेसिपी</button>
+  </div>
+
+  <!-- TAB 1: दैनिक नोंद -->
+  <div id="daily-tab" class="tab-content active">
+    <h3>दैनिक माहिती भरा</h3>
+    <form id="entryForm" onsubmit="saveDailyEntry(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>दिनांक:</label>
+          <input type="date" id="mDate" required>
+        </div>
+        <div class="form-group">
+          <label>वार:</label>
+          <input type="text" id="mDay" readonly placeholder="वार आपोआप येईल">
+        </div>
+        <div class="form-group">
+          <label>आजचा मेनू:</label>
+          <select id="mMenu" onchange="calcPreview()">
+            <option value="मुगडाळ खिचडी">मुगडाळ खिचडी (मूगडाळ)</option>
+            <option value="चना पुलाव">चना पुलाव (हरभरा)</option>
+            <option value="चवळी खिचडी">चवळी खिचडी (चवळी)</option>
+            <option value="मटकीची उसळ">मटकीची उसळ (मटकी)</option>
+            <option value="मटारपुलाव">मटारपुलाव (वाटाणा)</option>
+            <option value="सोयाबीन पुलाव">सोयाबीन पुलाव (सोयाबीन वडी)</option>
+            <option value="मसूर पुलाव">मसूर पुलाव (मसूरडाळ)</option>
+            <option value="वरण भात">वरण भात (तूरडाळ + अख्खा मूग)</option>
+            <option value="व्हेजिटेबल पुलाव">व्हेजिटेबल पुलाव (वाटाणा)</option>
+            <option value="मसाले भात">मसाले भात (वाटाणा)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>उपस्थित मुले (इ. १ ते ५):</label>
+          <input type="number" id="p15" value="10" min="0" oninput="calcPreview()" required>
+        </div>
+        <div class="form-group">
+          <label>उपस्थित मुले (इ. ६ ते ८):</label>
+          <input type="number" id="p68" value="0" min="0" oninput="calcPreview()" required>
+        </div>
+      </div>
+
+      <div class="card-calc" id="previewCard">
+        <h3>आज लागणारे धान्य व खर्च (मेनूनुसार हिशोब):</h3>
+        <p id="calcDetails">हजेरी संख्या टाका...</p>
+      </div>
+
+      <h4 style="margin-top:20px;">चव तपासणी तपशील:</h4>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>चव घेतल्याची वेळ:</label>
+          <input type="time" id="tTime" value="12:30">
+        </div>
+        <div class="form-group">
+          <label>आहार वाटप वेळ:</label>
+          <input type="time" id="dTime" value="13:00">
+        </div>
+        <div class="form-group">
+          <label>चव घेणाऱ्याचे नाव:</label>
+          <input type="text" id="tName" placeholder="उदा. मुख्याध्यापक / शिक्षक">
+        </div>
+        <div class="form-group">
+          <label>चवीबद्दल अभिप्राय:</label>
+          <input type="text" id="tRemark" value="उत्कृष्ट व चवदार">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">💾 दैनिक नोंद सेव्ह करा</button>
+    </form>
+  </div>
+
+  <!-- TAB 2: इ. १ ते ५ नोंदवही -->
+  <div id="reg15-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="hReg15">मासिक वापर नोंदवही - प्राथमिक (इ. १ ते ५)</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ प्रिंट काढा</button>
+    </div>
+    <div class="report-meta" id="metaReg15"></div>
+    <div class="table-responsive">
+      <table id="tbl15">
+        <thead>
+          <tr>
+            <th>दिनांक</th>
+            <th>मेनू</th>
+            <th>उपस्थिती</th>
+            <th>तांदूळ (कि.)</th>
+            <th>कडधान्य नाव</th>
+            <th>कडधान्य (कि.)</th>
+            <th>जिरे-मोहरी (कि.)</th>
+            <th>हळद-मसाला (कि.)</th>
+            <th>तेल (कि.)</th>
+            <th>मीठ (कि.)</th>
+            <th>भाजीपाला (₹)</th>
+            <th>पूरक आहार (₹)</th>
+            <th>इंधन (₹)</th>
+            <th class="no-print">कृती</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: इ. ६ ते ८ नोंदवही -->
+  <div id="reg68-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="hReg68">मासिक वापर नोंदवही - उच्च प्राथमिक (इ. ६ ते ८)</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ प्रिंट काढा</button>
+    </div>
+    <div class="report-meta" id="metaReg68"></div>
+    <div class="table-responsive">
+      <table id="tbl68">
+        <thead>
+          <tr>
+            <th>दिनांक</th>
+            <th>मेनू</th>
+            <th>उपस्थिती</th>
+            <th>तांदूळ (कि.)</th>
+            <th>कडधान्य नाव</th>
+            <th>कडधान्य (कि.)</th>
+            <th>जिरे-मोहरी (कि.)</th>
+            <th>हळद-मसाला (कि.)</th>
+            <th>तेल (कि.)</th>
+            <th>मीठ (कि.)</th>
+            <th>भाजीपाला (₹)</th>
+            <th>पूरक आहार (₹)</th>
+            <th>इंधन (₹)</th>
+            <th class="no-print">कृती</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: मासिक उपयोगिता १ ते ५ -->
+  <div id="stock15-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="hStock15">मासिक उपयोगिता / साठा प्रमाणपत्र (इ. १ ते ५)</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ प्रिंट काढा</button>
+    </div>
+    <div class="report-meta" id="metaStock15"></div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>क्र.</th>
+            <th>तपशील (जिन्नस)</th>
+            <th>इयत्ता</th>
+            <th>अराभीची शिल्लक (मागील शिल्लक)</th>
+            <th>चालू महिना प्राप्त</th>
+            <th>लोकसहभाग</th>
+            <th>एकूण माल</th>
+            <th>शिजविलेला/खर्ची माल</th>
+            <th>शाळास्तरावर अखेर शिल्लक</th>
+          </tr>
+        </thead>
+        <tbody id="stock15Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 5: मासिक उपयोगिता ६ ते ८ -->
+  <div id="stock68-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="hStock68">मासिक उपयोगिता / साठा प्रमाणपत्र (इ. ६ ते ८)</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ प्रिंट काढा</button>
+    </div>
+    <div class="report-meta" id="metaStock68"></div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>क्र.</th>
+            <th>तपशील (जिन्नस)</th>
+            <th>इयत्ता</th>
+            <th>अराभीची शिल्लक (मागील शिल्लक)</th>
+            <th>चालू महिना प्राप्त</th>
+            <th>लोकसहभाग</th>
+            <th>एकूण माल</th>
+            <th>शिजविलेला/खर्ची माल</th>
+            <th>शाळास्तरावर अखेर शिल्लक</th>
+          </tr>
+        </thead>
+        <tbody id="stock68Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 6: वार्षिक उपयोगिता १ ते ५ (नवीन) -->
+  <div id="annual15-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="color:#3730a3;">📅 वार्षिक उपयोगिता प्रमाणपत्र (इ. १ ते ५) - संपूर्ण वर्ष एकत्रित बेरीज</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ वार्षिक अहवाल प्रिंट</button>
+    </div>
+    <div class="report-meta" id="metaAnnual15"></div>
+    <p style="color:#64748b; font-size:0.85rem;">(टीप: यामध्ये एप्रिल ते मार्च या सर्व १२ महिन्यांतील आवक, लोकसहभाग व प्रत्यक्ष खर्ची धान्याची एकत्रित बेरीज आपोआप घेतली जाते.)</p>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr style="background:#e0e7ff;">
+            <th>क्र.</th>
+            <th>तपशील (जिन्नस)</th>
+            <th>इयत्ता</th>
+            <th>वर्षारंभीची शिल्लक (१ एप्रिल)</th>
+            <th>वर्षभरात एकूण प्राप्त माल</th>
+            <th>वर्षभरात एकूण लोकसहभाग</th>
+            <th>वर्षभरात एकूण उपलब्ध माल</th>
+            <th>वर्षभरात एकूण शिजविलेला माल</th>
+            <th>वर्षअखेर शिल्लक माल</th>
+          </tr>
+        </thead>
+        <tbody id="annual15Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 7: वार्षिक उपयोगिता ६ ते ८ (नवीन) -->
+  <div id="annual68-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="color:#3730a3;">📅 वार्षिक उपयोगिता प्रमाणपत्र (इ. ६ ते ८) - संपूर्ण वर्ष एकत्रित बेरीज</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ वार्षिक अहवाल प्रिंट</button>
+    </div>
+    <div class="report-meta" id="metaAnnual68"></div>
+    <p style="color:#64748b; font-size:0.85rem;">(टीप: यामध्ये एप्रिल ते मार्च या सर्व १२ महिन्यांतील आवक, लोकसहभाग व प्रत्यक्ष खर्ची धान्याची एकत्रित बेरीज आपोआप घेतली जाते.)</p>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr style="background:#e0e7ff;">
+            <th>क्र.</th>
+            <th>तपशील (जिन्नस)</th>
+            <th>इयत्ता</th>
+            <th>वर्षारंभीची शिल्लक (१ एप्रिल)</th>
+            <th>वर्षभरात एकूण प्राप्त माल</th>
+            <th>वर्षभरात एकूण लोकसहभाग</th>
+            <th>वर्षभरात एकूण उपलब्ध माल</th>
+            <th>वर्षभरात एकूण शिजविलेला माल</th>
+            <th>वर्षअखेर शिल्लक माल</th>
+          </tr>
+        </thead>
+        <tbody id="annual68Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 8: चव नोंदवही -->
+  <div id="taste-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="hTaste">दैनिक भोजन चव नोंदवही</h3>
+      <button class="btn-print" onclick="window.print()">🖨️ प्रिंट काढा</button>
+    </div>
+    <div class="report-meta" id="metaTaste"></div>
+    <div class="table-responsive">
+      <table id="tblTaste">
+        <thead>
+          <tr>
+            <th>दिनांक</th>
+            <th>वार</th>
+            <th>आजचा मेनू</th>
+            <th>चव घेतलेली वेळ</th>
+            <th>आहार वाटप वेळ</th>
+            <th>तपासणाऱ्याचे नाव</th>
+            <th>अभिप्राय</th>
+            <th>स्वाक्षरी</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 9: मेनू व जिन्नस रेसिपी सेटिंग्ज -->
+  <div id="settings-tab" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3>⚙️ मेनू रेसिपी व जिन्नस प्रमाण सेटिंग्ज (दरडोई कि.ग्रॅ.)</h3>
+      <div>
+        <button class="btn-save-norms" onclick="saveMenuRecipes()">💾 बदल सेव्ह करा</button>
+        <button class="btn-del" onclick="resetRecipesToDefault()" style="margin-left:8px; padding:8px 12px;">डिफॉल्ट रिसेट</button>
+      </div>
+    </div>
+    <p style="color:#64748b; font-size:0.85rem;">येथे बदल केलेले प्रमाण थेट संबंधित मेनूच्या हिशोबात आणि साठा रजिस्टरमध्ये खर्ची पडेल.</p>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>मेनूचे नाव</th>
+            <th>इयत्ता गट</th>
+            <th>तांदूळ (कि.)</th>
+            <th>कडधान्य नाव</th>
+            <th>कडधान्य (कि.)</th>
+            <th>जिरे (कि.)</th>
+            <th>मोहरी (कि.)</th>
+            <th>हळद (कि.)</th>
+            <th>मसाला (कि.)</th>
+            <th>तेल (कि.)</th>
+            <th>मीठ (कि.)</th>
+          </tr>
+        </thead>
+        <tbody id="recipeEditorBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ALL_MONTHS = [
+    '04_एप्रिल', '05_मे', '06_जून', '07_जुलै', '08_ऑगस्ट', '09_सप्टेंबर',
+    '10_ऑक्टोबर', '11_नोव्हेंबर', '12_डिसेंबर', '01_जानेवारी', '02_फेब्रुवारी', '03_मार्च'
+  ];
+
+  const ALL_MENUS = [
+    'मुगडाळ खिचडी', 'चना पुलाव', 'चवळी खिचडी', 'मटकीची उसळ', 'मटारपुलाव',
+    'सोयाबीन पुलाव', 'मसूर पुलाव', 'वरण भात', 'व्हेजिटेबल पुलाव', 'मसाले भात'
+  ];
+
+  const STOCK_ITEMS = [
+    'तांदूळ', 'मुगडाळ', 'तूरडाळ', 'मसूरडाळ', 'मटकी', 'अख्खा मूग', 
+    'चवळी', 'हरभरा', 'वाटाणा', 'जिरे', 'मोहरी', 'हळद', 'मसाला', 'तेल', 'मीठ', 'सोयाबीन'
+  ];
+
+  const DEFAULT_RECIPES = {
+    'सोयाबीन पुलाव': {
+      '1-5': { rice: 0.1, pulseItem: 'सोयाबीन', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0013, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'सोयाबीन', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0013, oil: 0.005, salt: 0.001 }
+    },
+    'मसूर पुलाव': {
+      '1-5': { rice: 0.1, pulseItem: 'मसूरडाळ', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0019, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'मसूरडाळ', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0019, oil: 0.005, salt: 0.001 }
+    },
+    'वरण भात': {
+      '1-5': { rice: 0.1, pulseItem: 'तूरडाळ', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0014, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'तूरडाळ', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0014, oil: 0.005, salt: 0.001 }
+    },
+    'मटारपुलाव': {
+      '1-5': { rice: 0.1, pulseItem: 'वाटाणा', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0, masala: 0.0014, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'वाटाणा', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0, masala: 0.0014, oil: 0.005, salt: 0.001 }
+    },
+    'मुगडाळ खिचडी': {
+      '1-5': { rice: 0.1, pulseItem: 'मुगडाळ', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0014, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'मुगडाळ', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0014, oil: 0.005, salt: 0.001 }
+    },
+    'मटकीची उसळ': {
+      '1-5': { rice: 0.1, pulseItem: 'मटकी', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0019, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'मटकी', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0019, oil: 0.005, salt: 0.001 }
+    },
+    'व्हेजिटेबल पुलाव': {
+      '1-5': { rice: 0.1, pulseItem: 'वाटाणा', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0, masala: 0.0014, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'वाटाणा', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0, masala: 0.0014, oil: 0.005, salt: 0.001 }
+    },
+    'चना पुलाव': {
+      '1-5': { rice: 0.1, pulseItem: 'हरभरा', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0002, masala: 0.0034, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'हरभरा', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0002, masala: 0.0034, oil: 0.005, salt: 0.001 }
+    },
+    'चवळी खिचडी': {
+      '1-5': { rice: 0.1, pulseItem: 'चवळी', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0002, masala: 0.0019, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'चवळी', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0002, masala: 0.0019, oil: 0.005, salt: 0.001 }
+    },
+    'मसाले भात': {
+      '1-5': { rice: 0.1, pulseItem: 'वाटाणा', pulse: 0.02, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0013, oil: 0.005, salt: 0.001 },
+      '6-8': { rice: 0.15, pulseItem: 'वाटाणा', pulse: 0.03, jire: 0.00005, mohari: 0.0001, halad: 0.0001, masala: 0.0013, oil: 0.005, salt: 0.001 }
+    }
+  };
+
+  let menuRecipes = JSON.parse(localStorage.getItem('mdm_menu_recipes_v2')) || DEFAULT_RECIPES;
+
+  const RATES = {
+    '1-5': { vegRate: 1.036, supplRate: 0.777, fuelRate: 0.777 },
+    '6-8': { vegRate: 1.552, supplRate: 1.164, fuelRate: 1.164 }
+  };
+
+  let currentMonth = document.getElementById('schMonth').value;
+  let allRecords = JSON.parse(localStorage.getItem('mdm_all_records')) || {};
+  let allStock = JSON.parse(localStorage.getItem('mdm_all_stock')) || {};
+
+  function loadSchoolHeader() {
+    const info = JSON.parse(localStorage.getItem('mdm_school_info')) || null;
+    if (info) {
+      if (info.name) document.getElementById('schName').value = info.name;
+      if (info.udise) document.getElementById('schUdise').value = info.udise;
+      if (info.center) document.getElementById('schCenter').value = info.center;
+      if (info.taluka) document.getElementById('schTaluka').value = info.taluka;
+      if (info.dist) document.getElementById('schDist').value = info.dist;
+    }
+    updateMetaHeaders();
+  }
+
+  function saveSchoolHeader() {
+    const info = {
+      name: document.getElementById('schName').value,
+      udise: document.getElementById('schUdise').value,
+      center: document.getElementById('schCenter').value,
+      taluka: document.getElementById('schTaluka').value,
+      dist: document.getElementById('schDist').value
+    };
+    localStorage.setItem('mdm_school_info', JSON.stringify(info));
+    updateMetaHeaders();
+  }
+
+  function updateMetaHeaders() {
+    const sName = document.getElementById('schName').value;
+    const sUdise = document.getElementById('schUdise').value;
+    const sCenter = document.getElementById('schCenter').value;
+    const sTaluka = document.getElementById('schTaluka').value;
+    const sDist = document.getElementById('schDist').value;
+    const sMonth = document.getElementById('schMonth').options[document.getElementById('schMonth').selectedIndex].text;
+
+    const htmlMonthly = `
+      <span>🏫 शाळा: <b>${sName}</b> (UDISE: ${sUdise})</span>
+      <span>📍 केंद्र: <b>${sCenter}</b> | तालुका: <b>${sTaluka}</b> | जिल्हा: <b>${sDist}</b></span>
+      <span>📅 महिना: <b>${sMonth}</b></span>
+    `;
+
+    const htmlAnnual = `
+      <span>🏫 शाळा: <b>${sName}</b> (UDISE: ${sUdise})</span>
+      <span>📍 केंद्र: <b>${sCenter}</b> | तालुका: <b>${sTaluka}</b> | जिल्हा: <b>${sDist}</b></span>
+      <span>📅 शैक्षणिक वर्ष: <b>एप्रिल ते मार्च (वार्षिक एकत्रित)</b></span>
+    `;
+
+    ['metaReg15', 'metaReg68', 'metaStock15', 'metaStock68', 'metaTaste'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = htmlMonthly;
+    });
+
+    ['metaAnnual15', 'metaAnnual68'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = htmlAnnual;
+    });
+  }
+
+  function getRecipe(menu, group) {
+    if (menuRecipes[menu] && menuRecipes[menu][group]) {
+      return menuRecipes[menu][group];
+    }
+    return DEFAULT_RECIPES[menu][group];
+  }
+
+  function getMonthRecords(m = currentMonth) {
+    return allRecords[m] || [];
+  }
+
+  function onMonthChange() {
+    currentMonth = document.getElementById('schMonth').value;
+    const mText = document.getElementById('schMonth').options[document.getElementById('schMonth').selectedIndex].text;
+    document.getElementById('hReg15').innerText = `मासिक वापर नोंदवही - प्राथमिक (इ. १ ते ५) - ${mText}`;
+    document.getElementById('hReg68').innerText = `मासिक वापर नोंदवही - उच्च प्राथमिक (इ. ६ ते ८) - ${mText}`;
+    document.getElementById('hStock15').innerText = `मासिक उपयोगिता / साठा प्रमाणपत्र (इ. १ ते ५) - ${mText}`;
+    document.getElementById('hStock68').innerText = `मासिक उपयोगिता / साठा प्रमाणपत्र (इ. ६ ते ८) - ${mText}`;
+    document.getElementById('hTaste').innerText = `दैनिक भोजन चव नोंदवही - ${mText}`;
+
+    updateMetaHeaders();
+    renderTables();
+    renderUtilityStock('1-5');
+    renderUtilityStock('6-8');
+    renderTasteTable();
+  }
+
+  document.getElementById('mDate').addEventListener('change', function() {
+    const days = ['रविवार', 'सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+    const dt = new Date(this.value);
+    if (!isNaN(dt.getTime())) {
+      document.getElementById('mDay').value = days[dt.getDay()];
+    }
+  });
+
+  function switchTab(tabId, ev) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (ev && ev.target) ev.target.classList.add('active');
+    if(tabId === 'reg15-tab' || tabId === 'reg68-tab') renderTables();
+    if(tabId === 'stock15-tab') renderUtilityStock('1-5');
+    if(tabId === 'stock68-tab') renderUtilityStock('6-8');
+    if(tabId === 'annual15-tab') renderAnnualStock('1-5');
+    if(tabId === 'annual68-tab') renderAnnualStock('6-8');
+    if(tabId === 'taste-tab') renderTasteTable();
+    if(tabId === 'settings-tab') renderRecipeEditor();
+  }
+
+  function calcPreview() {
+    const p15 = parseInt(document.getElementById('p15').value) || 0;
+    const p68 = parseInt(document.getElementById('p68').value) || 0;
+    const menu = document.getElementById('mMenu').value;
+
+    const r1 = getRecipe(menu, '1-5');
+    const r2 = getRecipe(menu, '6-8');
+
+    const totalRice = ((p15 * r1.rice) + (p68 * r2.rice)).toFixed(3);
+    const totalPulse = ((p15 * r1.pulse) + (p68 * r2.pulse)).toFixed(3);
+
+    const vegTotal = ((p15 * RATES['1-5'].vegRate) + (p68 * RATES['6-8'].vegRate)).toFixed(2);
+    const fuelTotal = ((p15 * RATES['1-5'].fuelRate) + (p68 * RATES['6-8'].fuelRate)).toFixed(2);
+
+    document.getElementById('calcDetails').innerHTML = `
+      <strong>एकूण लाभार्थी:</strong> १ ते ५: <b>${p15}</b> | ६ ते ८: <b>${p68}</b> (एकूण: ${p15 + p68})<br>
+      🌾 <strong>तांदूळ:</strong> ${totalRice} कि.ग्रॅ.<br>
+      🥣 <strong>${r1.pulseItem} (कडधान्य):</strong> <b>${totalPulse} कि.ग्रॅ.</b> (१-५: ${(p15 * r1.pulse).toFixed(3)} कि. + ६-८: ${(p68 * r2.pulse).toFixed(3)} कि.)<br>
+      🥬 <strong>भाजीपाला खर्च:</strong> ₹${vegTotal} &nbsp;|&nbsp; ⛽ <strong>इंधन खर्च:</strong> ₹${fuelTotal}
+    `;
+  }
+
+  function saveDailyEntry(e) {
+    e.preventDefault();
+    const entry = {
+      id: Date.now(),
+      date: document.getElementById('mDate').value,
+      day: document.getElementById('mDay').value,
+      menu: document.getElementById('mMenu').value,
+      p15: parseInt(document.getElementById('p15').value) || 0,
+      p68: parseInt(document.getElementById('p68').value) || 0,
+      tTime: document.getElementById('tTime').value,
+      dTime: document.getElementById('dTime').value,
+      tName: document.getElementById('tName').value || 'मुख्याध्यापक',
+      tRemark: document.getElementById('tRemark').value
+    };
+
+    if (!allRecords[currentMonth]) allRecords[currentMonth] = [];
+    allRecords[currentMonth].push(entry);
+    localStorage.setItem('mdm_all_records', JSON.stringify(allRecords));
+    alert('नोंद यशस्वीरीत्या सेव्ह झाली!');
+    calcPreview();
+  }
+
+  function renderTables() {
+    const t15Body = document.querySelector('#tbl15 tbody');
+    const t68Body = document.querySelector('#tbl68 tbody');
+    t15Body.innerHTML = '';
+    t68Body.innerHTML = '';
+
+    const records = getMonthRecords();
+
+    records.forEach(item => {
+      const r1 = getRecipe(item.menu, '1-5');
+      const r2 = getRecipe(item.menu, '6-8');
+
+      // 1-5
+      const tr1 = document.createElement('tr');
+      tr1.innerHTML = `
+        <td>${item.date} (${item.day})</td>
+        <td>${item.menu}</td>
+        <td>${item.p15}</td>
+        <td>${(item.p15 * r1.rice).toFixed(3)}</td>
+        <td>${r1.pulseItem}</td>
+        <td>${(item.p15 * r1.pulse).toFixed(3)}</td>
+        <td>${(item.p15 * (r1.jire + r1.mohari)).toFixed(5)}</td>
+        <td>${(item.p15 * (r1.halad + r1.masala)).toFixed(4)}</td>
+        <td>${(item.p15 * r1.oil).toFixed(3)}</td>
+        <td>${(item.p15 * r1.salt).toFixed(3)}</td>
+        <td>${(item.p15 * RATES['1-5'].vegRate).toFixed(2)}</td>
+        <td>${(item.p15 * RATES['1-5'].supplRate).toFixed(2)}</td>
+        <td>${(item.p15 * RATES['1-5'].fuelRate).toFixed(2)}</td>
+        <td class="no-print"><button class="btn-del" onclick="deleteEntry(${item.id})">रद्द</button></td>
+      `;
+      t15Body.appendChild(tr1);
+
+      // 6-8
+      const tr2 = document.createElement('tr');
+      tr2.innerHTML = `
+        <td>${item.date} (${item.day})</td>
+        <td>${item.menu}</td>
+        <td>${item.p68}</td>
+        <td>${(item.p68 * r2.rice).toFixed(3)}</td>
+        <td>${r2.pulseItem}</td>
+        <td>${(item.p68 * r2.pulse).toFixed(3)}</td>
+        <td>${(item.p68 * (r2.jire + r2.mohari)).toFixed(5)}</td>
+        <td>${(item.p68 * (r2.halad + r2.masala)).toFixed(4)}</td>
+        <td>${(item.p68 * r2.oil).toFixed(3)}</td>
+        <td>${(item.p68 * r2.salt).toFixed(3)}</td>
+        <td>${(item.p68 * RATES['6-8'].vegRate).toFixed(2)}</td>
+        <td>${(item.p68 * RATES['6-8'].supplRate).toFixed(2)}</td>
+        <td>${(item.p68 * RATES['6-8'].fuelRate).toFixed(2)}</td>
+        <td class="no-print"><button class="btn-del" onclick="deleteEntry(${item.id})">रद्द</button></td>
+      `;
+      t68Body.appendChild(tr2);
+    });
+  }
+
+  function getMonthConsumption(monthKey, group) {
+    const is15 = (group === '1-5');
+    const records = getMonthRecords(monthKey);
+    let used = {};
+    STOCK_ITEMS.forEach(it => used[it] = 0);
+
+    records.forEach(entry => {
+      const count = is15 ? entry.p15 : entry.p68;
+      if (count > 0) {
+        const r = getRecipe(entry.menu, group);
+        used['तांदूळ'] += count * r.rice;
+        used['जिरे'] += count * r.jire;
+        used['मोहरी'] += count * r.mohari;
+        used['हळद'] += count * r.halad;
+        used['मसाला'] += count * r.masala;
+        used['तेल'] += count * r.oil;
+        used['मीठ'] += count * r.salt;
+
+        if (entry.menu === 'वरण भात') {
+          used['तूरडाळ'] += (count * r.pulse) / 2;
+          used['अख्खा मूग'] += (count * r.pulse) / 2;
+        } else if (r.pulseItem && used[r.pulseItem] !== undefined) {
+          used[r.pulseItem] += count * r.pulse;
+        }
+      }
+    });
+    return used;
+  }
+
+  function renderUtilityStock(group) {
+    const is15 = (group === '1-5');
+    const sBody = document.getElementById(is15 ? 'stock15Body' : 'stock68Body');
+    sBody.innerHTML = '';
+    const labelGroup = is15 ? 'इ १ ते ५' : 'इ ६ ते ८';
+    const used = getMonthConsumption(currentMonth, group);
+    const monthStock = allStock[currentMonth] || {};
+
+    STOCK_ITEMS.forEach((item, idx) => {
+      const prefix = `${group}_${item}`;
+      const prev = monthStock[`prev_${prefix}`] || 0;
+      const rec = monthStock[`rec_${prefix}`] || 0;
+      const lok = monthStock[`lok_${prefix}`] || 0;
+      const total = Number(prev) + Number(rec) + Number(lok);
+      const consumed = used[item] || 0;
+      const bal = (total - consumed).toFixed(4);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td><strong>${item}</strong></td>
+        <td>${labelGroup}</td>
+        <td><input type="number" step="0.0001" style="width:80px" value="${prev}" onchange="saveStockVal('prev_${prefix}', this.value, '${group}')"></td>
+        <td><input type="number" step="0.0001" style="width:80px" value="${rec}" onchange="saveStockVal('rec_${prefix}', this.value, '${group}')"></td>
+        <td><input type="number" step="0.0001" style="width:80px" value="${lok}" onchange="saveStockVal('lok_${prefix}', this.value, '${group}')"></td>
+        <td><strong>${total.toFixed(4)}</strong></td>
+        <td>${consumed.toFixed(4)}</td>
+        <td style="color:${bal < 0 ? 'red':'green'}; font-weight:bold;">${bal}</td>
+      `;
+      sBody.appendChild(tr);
+    });
+  }
+
+  function saveStockVal(key, val, group) {
+    if (!allStock[currentMonth]) allStock[currentMonth] = {};
+    allStock[currentMonth][key] = parseFloat(val) || 0;
+    localStorage.setItem('mdm_all_stock', JSON.stringify(allStock));
+    renderUtilityStock(group);
+  }
+
+  // वार्षिक उपयोगिता (Annual Stock Calculation) - सर्व १२ महिन्यांची एकत्रित बेरीज
+  function renderAnnualStock(group) {
+    const is15 = (group === '1-5');
+    const body = document.getElementById(is15 ? 'annual15Body' : 'annual68Body');
+    body.innerHTML = '';
+    const labelGroup = is15 ? 'इ १ ते ५' : 'इ ६ ते ८';
+
+    // १ एप्रिल ची आरंभिक शिल्लक
+    const aprilStock = allStock['04_एप्रिल'] || {};
+
+    // १२ महिन्यांतील एकूण आवक, एकूण लोकसहभाग आणि एकूण खर्ची
+    let yearlyRec = {};
+    let yearlyLok = {};
+    let yearlyConsumed = {};
+    STOCK_ITEMS.forEach(it => {
+      yearlyRec[it] = 0;
+      yearlyLok[it] = 0;
+      yearlyConsumed[it] = 0;
+    });
+
+    ALL_MONTHS.forEach(m => {
+      const mStock = allStock[m] || {};
+      const mUsed = getMonthConsumption(m, group);
+
+      STOCK_ITEMS.forEach(it => {
+        const prefix = `${group}_${it}`;
+        yearlyRec[it] += Number(mStock[`rec_${prefix}`] || 0);
+        yearlyLok[it] += Number(mStock[`lok_${prefix}`] || 0);
+        yearlyConsumed[it] += Number(mUsed[it] || 0);
+      });
+    });
+
+    STOCK_ITEMS.forEach((it, idx) => {
+      const prefix = `${group}_${it}`;
+      const startBal = Number(aprilStock[`prev_${prefix}`] || 0); // वर्षाची सुरुवातीची शिल्लक
+      const totRec = yearlyRec[it];
+      const totLok = yearlyLok[it];
+      const totAvail = startBal + totRec + totLok;
+      const totUsed = yearlyConsumed[it];
+      const finalBal = (totAvail - totUsed).toFixed(4);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td><strong>${it}</strong></td>
+        <td>${labelGroup}</td>
+        <td><b>${startBal.toFixed(4)}</b></td>
+        <td>${totRec.toFixed(4)}</td>
+        <td>${totLok.toFixed(4)}</td>
+        <td><strong style="color:#1e40af;">${totAvail.toFixed(4)}</strong></td>
+        <td style="color:#b91c1c; font-weight:bold;">${totUsed.toFixed(4)}</td>
+        <td style="color:${finalBal < 0 ? 'red':'#15803d'}; font-weight:bold; font-size:0.95rem;">${finalBal}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  function renderRecipeEditor() {
+    const tbody = document.getElementById('recipeEditorBody');
+    tbody.innerHTML = '';
+
+    ALL_MENUS.forEach(m => {
+      ['1-5', '6-8'].forEach(grp => {
+        const r = getRecipe(m, grp);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${m}</strong></td>
+          <td>${grp === '1-5' ? 'इ १ ते ५' : 'इ ६ ते ८'}</td>
+          <td><input type="number" step="0.001" style="width:65px" id="rec_${m}_${grp}_rice" value="${r.rice}"></td>
+          <td>
+            <select id="rec_${m}_${grp}_pulseItem" style="padding:2px;">
+              ${STOCK_ITEMS.filter(x => ['मुगडाळ','तूरडाळ','मसूरडाळ','मटकी','अख्खा मूग','चवळी','हरभरा','वाटाणा','सोयाबीन'].includes(x)).map(x => `<option value="${x}" ${x===r.pulseItem?'selected':''}>${x}</option>`).join('')}
+            </select>
+          </td>
+          <td><input type="number" step="0.001" style="width:65px" id="rec_${m}_${grp}_pulse" value="${r.pulse}"></td>
+          <td><input type="number" step="0.00001" style="width:70px" id="rec_${m}_${grp}_jire" value="${r.jire}"></td>
+          <td><input type="number" step="0.00001" style="width:70px" id="rec_${m}_${grp}_mohari" value="${r.mohari}"></td>
+          <td><input type="number" step="0.00001" style="width:70px" id="rec_${m}_${grp}_halad" value="${r.halad}"></td>
+          <td><input type="number" step="0.0001" style="width:70px" id="rec_${m}_${grp}_masala" value="${r.masala}"></td>
+          <td><input type="number" step="0.001" style="width:65px" id="rec_${m}_${grp}_oil" value="${r.oil}"></td>
+          <td><input type="number" step="0.001" style="width:65px" id="rec_${m}_${grp}_salt" value="${r.salt}"></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  function saveMenuRecipes() {
+    ALL_MENUS.forEach(m => {
+      ['1-5', '6-8'].forEach(grp => {
+        if (!menuRecipes[m]) menuRecipes[m] = {};
+        menuRecipes[m][grp] = {
+          rice: parseFloat(document.getElementById(`rec_${m}_${grp}_rice`).value) || 0,
+          pulseItem: document.getElementById(`rec_${m}_${grp}_pulseItem`).value,
+          pulse: parseFloat(document.getElementById(`rec_${m}_${grp}_pulse`).value) || 0,
+          jire: parseFloat(document.getElementById(`rec_${m}_${grp}_jire`).value) || 0,
+          mohari: parseFloat(document.getElementById(`rec_${m}_${grp}_mohari`).value) || 0,
+          halad: parseFloat(document.getElementById(`rec_${m}_${grp}_halad`).value) || 0,
+          masala: parseFloat(document.getElementById(`rec_${m}_${grp}_masala`).value) || 0,
+          oil: parseFloat(document.getElementById(`rec_${m}_${grp}_oil`).value) || 0,
+          salt: parseFloat(document.getElementById(`rec_${m}_${grp}_salt`).value) || 0
+        };
+      });
+    });
+
+    localStorage.setItem('mdm_menu_recipes_v2', JSON.stringify(menuRecipes));
+    alert('मेनूनुसार सर्व प्रमाण व रेसिपी यशस्वीरित्या सेव्ह झाली!');
+    calcPreview();
+    renderTables();
+    renderUtilityStock('1-5');
+    renderUtilityStock('6-8');
+  }
+
+  function resetRecipesToDefault() {
+    if (confirm('सर्व मेनूचे प्रमाण मूळ नियमानुसार (Default) रिसेट करायचे का?')) {
+      menuRecipes = JSON.parse(JSON.stringify(DEFAULT_RECIPES));
+      localStorage.setItem('mdm_menu_recipes_v2', JSON.stringify(menuRecipes));
+      renderRecipeEditor();
+      calcPreview();
+      renderTables();
+      renderUtilityStock('1-5');
+      renderUtilityStock('6-8');
+      alert('प्रमाण रिसेट झाले!');
+    }
+  }
+
+  function renderTasteTable() {
+    const tBody = document.querySelector('#tblTaste tbody');
+    tBody.innerHTML = '';
+    const records = getMonthRecords();
+    records.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.date}</td>
+        <td>${item.day}</td>
+        <td>${item.menu}</td>
+        <td>${item.tTime || '12:30'}</td>
+        <td>${item.dTime || '13:00'}</td>
+        <td>${item.tName || '-'}</td>
+        <td>${item.tRemark || 'उत्कृष्ट'}</td>
+        <td>________</td>
+      `;
+      tBody.appendChild(tr);
+    });
+  }
+
+  function deleteEntry(id) {
+    if(confirm('सदर नोंद नक्की रद्द करायची आहे का?')) {
+      allRecords[currentMonth] = (allRecords[currentMonth] || []).filter(x => x.id !== id);
+      localStorage.setItem('mdm_all_records', JSON.stringify(allRecords));
+      renderTables();
+      renderUtilityStock('1-5');
+      renderUtilityStock('6-8');
+      renderTasteTable();
+    }
+  }
+
+  // लोड करताना
+  document.getElementById('mDate').valueAsDate = new Date();
+  document.getElementById('mDate').dispatchEvent(new Event('change'));
+  loadSchoolHeader();
+  onMonthChange();
+  calcPreview();
+</script>
+
+</body>
+</html>
