@@ -21,24 +21,14 @@
     header h1 { margin: 0; color: var(--primary); font-size: 1.6rem; }
     header p { margin: 5px 0 0; color: #64748b; font-size: 0.95rem; }
 
+    /* Backup Toolbar */
     .backup-bar {
-      display: flex; gap: 10px; align-items: center; justify-content: flex-end;
-      background: #f8fafc; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px;
-      border: 1px dashed #94a3b8; flex-wrap: wrap;
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+      background: #f8fafc; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #94a3b8;
     }
-    .backup-bar span { font-size: 0.9rem; font-weight: bold; color: #334155; margin-right: auto; }
-    .btn-backup {
-      background: #059669; color: white; border: none; padding: 7px 14px;
-      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .btn-backup:hover { opacity: 0.9; }
-    .btn-restore {
-      background: #d97706; color: white; border: none; padding: 7px 14px;
-      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .btn-restore:hover { opacity: 0.9; }
+    .btn-backup { background: #059669; color: white; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+    .btn-restore { background: #d97706; color: white; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+    .backup-bar label { font-size: 0.85rem; font-weight: 600; color: #475569; margin-right: auto; }
 
     .school-info {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;
@@ -102,12 +92,12 @@
     <p>दैनिक हिशोब, मासिक व वार्षिक उपयोगिता साठा नोंदणी प्रणाली</p>
   </header>
 
-  <!-- डेटा बॅकअप व रिस्टोअर बार (Data Safety Bar) -->
+  <!-- डेटा बॅकअप व सुरक्षा टूलबार -->
   <div class="backup-bar no-print">
-    <span>🔒 डेटा सुरक्षा व सुरक्षित साठा (Cloud/Offline Backup):</span>
-    <button class="btn-backup" onclick="exportBackupData()">📥 डेटा बॅकअप डाऊनलोड करा</button>
-    <button class="btn-restore" onclick="triggerRestore()">📤 बॅकअप रिस्टोअर करा</button>
-    <input type="file" id="restoreFileInput" accept=".json" style="display:none;" onchange="importBackupData(event)">
+    <label>🔒 डेटा सुरक्षा केंद्र (Data Backup & Safety):</label>
+    <button class="btn-backup" onclick="exportBackupData()">📥 डेटा बॅकअप डाऊनलोड करा (.json)</button>
+    <button class="btn-restore" onclick="document.getElementById('importFile').click()">📤 बॅकअप फाईल रिस्टोअर करा</button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackupData(event)">
   </div>
 
   <!-- शाळा, केंद्र, तालुका, जिल्हा व महिना -->
@@ -534,72 +524,57 @@
   let allRecords = JSON.parse(localStorage.getItem('mdm_all_records')) || {};
   let allStock = JSON.parse(localStorage.getItem('mdm_all_stock')) || {};
 
-  /* === डेटा बॅकअप (Export) व रिस्टोअर (Import) कार्यप्रणाली === */
+  /* === डेटा बॅकअप व सुरक्षा सिस्टीम === */
   function exportBackupData() {
     const backupData = {
-      version: '2.0',
-      exportDate: new Date().toISOString(),
-      schoolInfo: JSON.parse(localStorage.getItem('mdm_school_info')) || {},
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      schoolInfo: JSON.parse(localStorage.getItem('mdm_school_info')) || null,
       allRecords: allRecords,
       allStock: allStock,
       menuRecipes: menuRecipes
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
-    const schName = (backupData.schoolInfo.name || 'MDM').replace(/\s+/g, '_');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `MDM_Backup_${schName}_${today}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    alert('✅ संपूर्ण डेटा बॅकअप यशस्वीरीत्या डाऊनलोड झाला!\nसदर फाईल तुमच्या Google Drive किंवा WhatsApp वर सुरक्षित सेव्ह करा.');
+    const dlAnchorElem = document.createElement('a');
+    const today = new Date().toISOString().split('T')[0];
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", `MDM_DATA_BACKUP_${today}.json`);
+    dlAnchorElem.click();
+    alert('सर्व नोंदींचा डेटा सुरक्षितरीत्या डाऊनलोड झाला आहे! ही फाईल सुरक्षित ठेवा.');
   }
 
-  function triggerRestore() {
-    document.getElementById('restoreFileInput').click();
-  }
-
-  function importBackupData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
+  function importBackupData(e) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(event) {
       try {
-        const importedData = JSON.parse(e.target.result);
-        if (!importedData.allRecords && !importedData.allStock) {
-          alert('❌ चुकीची बॅकअप फाईल! कृपया योग्य .json फाईल निवडा.');
-          return;
-        }
-
-        if (confirm('⚠️ लक्ष द्या: बॅकअप रिस्टोअर केल्याने सध्याच्या नोंदी बदलल्या जातील. खात्री आहे का?')) {
-          if (importedData.schoolInfo) localStorage.setItem('mdm_school_info', JSON.stringify(importedData.schoolInfo));
-          if (importedData.allRecords) {
-            allRecords = importedData.allRecords;
+        const imported = JSON.parse(event.target.result);
+        if (imported.allRecords && imported.allStock) {
+          if (confirm('या बॅकअप फाईलमधील सर्व डेटा ॲपमध्ये लोड करायचा का? चालू डेटा रिप्लेस होईल.')) {
+            allRecords = imported.allRecords;
+            allStock = imported.allStock;
+            if (imported.menuRecipes) menuRecipes = imported.menuRecipes;
+            if (imported.schoolInfo) {
+              localStorage.setItem('mdm_school_info', JSON.stringify(imported.schoolInfo));
+            }
             localStorage.setItem('mdm_all_records', JSON.stringify(allRecords));
-          }
-          if (importedData.allStock) {
-            allStock = importedData.allStock;
             localStorage.setItem('mdm_all_stock', JSON.stringify(allStock));
-          }
-          if (importedData.menuRecipes) {
-            menuRecipes = importedData.menuRecipes;
             localStorage.setItem('mdm_menu_recipes_v2', JSON.stringify(menuRecipes));
+            
+            loadSchoolHeader();
+            onMonthChange();
+            alert('डेटा यशस्वीरीत्या पूर्ववत (Restore) करण्यात आला आहे!');
           }
-
-          loadSchoolHeader();
-          onMonthChange();
-          calcPreview();
-          alert('🎉 सर्व डेटा यशस्वीरीत्या रिस्टोअर झाला!');
+        } else {
+          alert('अवैध बॅकअप फाईल! कृपया योग्य MDM फाईल निवडा.');
         }
       } catch (err) {
-        alert('❌ फाईल वाचताना त्रुटी आली. कृपया वैध फाईल निवडा.');
+        alert('फाईल वाचताना अडचण आली. कृपया योग्य फाईल निवडा.');
       }
-      event.target.value = ''; // रिसेट
     };
-    reader.readAsText(file);
+    if (e.target.files && e.target.files[0]) {
+      fileReader.readAsText(e.target.files[0]);
+    }
   }
 
   function loadSchoolHeader() {
@@ -1027,7 +1002,7 @@
     }
   }
 
-  // लोड करताना
+  // सुरुवातीला रन होणारे फंक्शन्स
   document.getElementById('mDate').valueAsDate = new Date();
   document.getElementById('mDate').dispatchEvent(new Event('change'));
   loadSchoolHeader();
